@@ -38,8 +38,6 @@ module DbMigrationSpace
       defined_versions.include?(version)
     end
 
-    private
-
     def defined_versions
       migrations.map(&:version)
     end

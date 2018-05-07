@@ -120,6 +120,24 @@ RSpec.describe 'space integrity checking' do
     end
   end
 
+  describe 'rebuilding index' do
+    before {
+      migrate
+      DbMigrationSpace::SchemaMigrationBySpace.delete_all
+      DbMigrationSpace::SchemaMigrationBySpace.create! version: 2346, space: 'xyz'
+    }
+
+    it 'recreates index using versions from schema_migrations table' do
+      DbMigrationSpace.rebuild_index
+      expect(recorded_migrations).to contain_exactly(
+        {version: 1, space: 'a'},
+        {version: 2, space: 'b'},
+        {version: 4, space: 'a'},
+        {version: 5, space: 'b'}
+      )
+    end
+  end
+
   def migrate(*args)
     migration_context.migrate *args
   end

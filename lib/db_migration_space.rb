@@ -35,5 +35,24 @@ module DbMigrationSpace
     end
   end
 
+  def DbMigrationSpace.rebuild_index
+    all_versions = if ActiveRecord::VERSION::STRING < '5.2'
+      ActiveRecord::Migrator.get_all_versions
+    else
+      ActiveRecord::MigrationContext.new([]).get_all_versions
+    end
+    SchemaMigrationBySpace.create_table
+    ActiveRecord::Base.transaction do
+      SchemaMigrationBySpace.delete_all
+      @spaces.values.each do |space|
+        (space.defined_versions & all_versions).each do |version|
+          SchemaMigrationBySpace.create! version: version, space: space.name
+        end
+      end
+    end
+  end
+
   @spaces = {}
 end
+
+require "db_migration_space/railtie" if defined?(::Rails)
