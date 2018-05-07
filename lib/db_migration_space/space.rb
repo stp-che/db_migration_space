@@ -11,7 +11,11 @@ module DbMigrationSpace
     end
 
     def migrations
-      ActiveRecord::Migrator.migrations(@paths)
+      if ActiveRecord::VERSION::STRING < '5.2'
+        ActiveRecord::Migrator.migrations(@paths)
+      else
+        ActiveRecord::MigrationContext.new(@paths).migrations
+      end
     end
 
     def missing_migrations

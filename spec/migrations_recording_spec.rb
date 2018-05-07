@@ -120,15 +120,43 @@ RSpec.describe 'space integrity checking' do
     end
   end
 
-  def migrate(target_version=nil)
-    ActiveRecord::Migrator.migrate migrations_paths, target_version
+  def migrate(*args)
+    migration_context.migrate *args
   end
 
-  def run(direction, target_version=nil)
-    ActiveRecord::Migrator.run direction, migrations_paths, target_version
+  def run(*args)
+    migration_context.run *args
   end
 
-  def rollback(steps=1)
-    ActiveRecord::Migrator.rollback migrations_paths, steps
+  def rollback(*args)
+    migration_context.rollback *args
   end
+
+  def migration_context
+    if ActiveRecord::VERSION::STRING < '5.2'
+      MigrationContext.new(migrations_paths)
+    else
+      ActiveRecord::MigrationContext.new(migrations_paths)
+    end
+  end
+
+  # Compatibility with ActiveRecord 5.0 and 5.1
+  class MigrationContext
+    def initialize(paths)
+      @paths = paths
+    end
+
+    def migrate(target_version=nil)
+      ActiveRecord::Migrator.migrate @paths, target_version
+    end
+
+    def run(direction, target_version=nil)
+      ActiveRecord::Migrator.run direction, @paths, target_version
+    end
+
+    def rollback(steps=1)
+      ActiveRecord::Migrator.rollback @paths, steps
+    end
+  end
+
 end
